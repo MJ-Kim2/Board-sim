@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Board meeting simulator · MG5565</title>
+<style>
+:root{
+  --navy:#1E2761; --ice:#CADCFC; --mint:#02C39A; --mint-d:#017a5f; --bg:#F6F8FC; --card:#FFFFFF; --soft:#EDF1F9;
+  --text:#1B2340; --muted:#4F5F82; --coral:#C93A45; --coral-l:#FDECEE; --amber:#F2B84B; --line:#D5DCEB;
+  --serif:Georgia,"Times New Roman",serif; --sans:system-ui,-apple-system,"Segoe UI",Roboto,Calibri,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{font-size:17px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5}
+body.class-mode{font-size:1.1rem}
+button,textarea,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+.top{background:var(--navy);color:#fff;padding:.9rem 1.2rem;display:flex;flex-wrap:wrap;gap:.6rem 1.5rem;align-items:center;justify-content:space-between}
+.top h1{font:700 1.3rem/1.2 var(--serif);margin:0}
+.top h1 small{display:block;font:400 .85rem var(--sans);color:var(--ice);margin-top:.15rem}
+.tabs{display:flex;gap:.4rem}
+.tabs button{background:transparent;border:1.5px solid var(--ice);color:#fff;padding:.4rem .9rem;border-radius:999px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:#fff;color:var(--navy);border-color:#fff;font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:1.2rem}
+.grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,1fr);gap:1.4rem;align-items:start}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+.stack{display:grid;gap:1.4rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.3rem}
+.panel h2{font:700 1.45rem/1.25 var(--serif);margin:0 0 .6rem;color:var(--navy)}
+.panel h3{font:700 1.1rem/1.3 var(--serif);margin:1.2rem 0 .4rem;color:var(--navy)}
+.progress{display:flex;gap:.35rem;margin:0 0 1rem}
+.progress span{height:6px;flex:1;border-radius:3px;background:var(--line)}
+.progress span.done{background:var(--navy)} .progress span.now{background:var(--mint)}
+.scene{margin:0 0 .8rem;max-width:64ch}
+.hint{background:var(--soft);border-left:4px solid var(--navy);padding:.6rem .8rem;border-radius:6px;margin:.8rem 0;max-width:64ch}
+.think{border:2px dashed var(--navy);border-radius:12px;padding:.7rem 1rem;margin:1rem 0;max-width:64ch}
+.think b{color:var(--navy)}
+.think ul{margin:.3rem 0 0;padding-left:1.1rem}
+.steps{counter-reset:s;list-style:none;padding:0;margin:.6rem 0;max-width:64ch}
+.steps li{counter-increment:s;position:relative;padding:.45rem 0 .45rem 2.6rem;border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:.35rem;width:1.9rem;height:1.9rem;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:700}
+.opts{display:grid;gap:.7rem;margin:1rem 0}
+.opt{display:block;text-align:left;width:100%;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:.8rem 1rem;cursor:pointer}
+.opt:hover{border-color:var(--navy)}
+.opt[aria-pressed="true"]{border-color:var(--navy);background:#E9EEFB;box-shadow:inset 5px 0 0 var(--navy)}
+.opt b{display:block;font-size:1.02rem}
+.opt span{display:block;color:var(--muted);font-size:.95rem;margin-top:.15rem}
+label.lbl{display:block;font-weight:600;margin:1rem 0 .3rem}
+textarea{width:100%;min-height:4.2rem;border:2px solid var(--line);border-radius:10px;padding:.6rem .7rem;background:#fff;resize:vertical}
+.btn{background:var(--navy);color:#fff;border:0;border-radius:10px;padding:.7rem 1.3rem;cursor:pointer;font-weight:600}
+.btn:hover{background:#2a3688}
+.btn[disabled]{background:#9AA5C4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--navy);border:2px solid var(--navy)}
+.row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;margin-top:1rem}
+.small{font-size:.9rem;color:var(--muted)}
+.up{color:var(--mint-d);font-weight:700} .down{color:var(--coral);font-weight:700} .flat{color:var(--muted)}
+.why{list-style:none;padding:0;margin:.4rem 0}
+.why li{padding:.55rem 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:9.5rem 4.6rem minmax(0,1fr);gap:.2rem .7rem;align-items:baseline}
+.why .mn{font-weight:600}
+.why .rs{color:var(--text);font-size:.97rem}
+@media(max-width:560px){.why li{grid-template-columns:1fr 4rem}.why .rs{grid-column:1/-1}}
+.note{background:var(--coral-l);border-left:4px solid var(--coral);padding:.6rem .8rem;border-radius:6px;margin:.7rem 0;max-width:64ch}
+.note.ok{background:#E6F7F2;border-color:var(--mint-d)}
+.note ul{margin:.3rem 0 0;padding-left:1.1rem}
+.fac{margin-top:1.2rem;border:1px solid var(--line);border-radius:10px;padding:.5rem .9rem;background:var(--soft)}
+.fac summary{cursor:pointer;font-weight:600;color:var(--navy)}
+.fac p{margin:.4rem 0;max-width:66ch}
+/* scorecard */
+.metric{margin:0 0 1.05rem}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem}
+.mname{font-weight:600}
+.mval{font:700 1.5rem var(--serif);color:var(--navy);display:flex;gap:.5rem;align-items:baseline}
+.chip{font:600 .85rem var(--sans)}
+.track{position:relative;height:12px;background:var(--soft);border-radius:6px;margin:.45rem 0 .15rem;border:1px solid var(--line)}
+.track i{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--navy);border:3px solid #fff;box-shadow:0 0 0 1.5px var(--navy);transition:left .6s ease}
+.track i.b{border-radius:3px;transform:rotate(45deg);background:var(--mint);box-shadow:0 0 0 1.5px var(--mint-d)}
+.track .gap{position:absolute;top:3px;height:6px;background:var(--amber);opacity:.8}
+.track .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--line)}
+.mdef{font-size:.85rem;color:var(--muted)}
+.legend{font-size:.85rem;color:var(--muted);margin-top:.3rem}
+details{margin-top:1rem} summary{cursor:pointer;font-weight:600;color:var(--navy)}
+.votes{display:grid;gap:.7rem;margin:1rem 0}
+.vote{display:grid;grid-template-columns:minmax(0,1fr) 5.2rem;gap:.8rem;align-items:center;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:.7rem 1rem}
+.vote input{width:100%;padding:.4rem;border:2px solid var(--line);border-radius:8px;text-align:center;font-size:1.2rem}
+.split{display:flex;height:2rem;border-radius:8px;overflow:hidden;margin:.6rem 0;border:1px solid var(--line)}
+.split div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;min-width:0}
+.sA{background:var(--navy)} .sB{background:var(--mint-d)} .sC{background:#7A5AF8}
+.code{font:700 2rem/1 var(--serif);letter-spacing:.25em;color:var(--navy);background:var(--soft);padding:.5rem 1rem;border-radius:10px;display:inline-block}
+.q{margin:.3rem 0;padding-left:1.1rem;max-width:64ch}
+table{border-collapse:collapse;width:100%;font-size:.95rem} th,td{border-bottom:1px solid var(--line);padding:.35rem .4rem;text-align:left}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.tot td{font-weight:700;border-top:2px solid var(--navy)}
+.tscroll{overflow-x:auto}
+svg text{font-family:var(--sans)}
+.cls textarea{min-height:7rem;font-family:ui-monospace,Menlo,Consolas,monospace}
+/* loop panel */
+.loop svg{width:100%;height:auto;display:block;background:#FBFCFF;border-radius:10px;border:1px solid var(--line)}
+.loopcap{margin:.7rem 0 0;max-width:64ch}
+body.loopmode header,body.loopmode #app{display:none}
+body.loopmode #loopsolo{display:block}
+#loopsolo{display:none;padding:1rem;max-width:1000px;margin:0 auto}
+#loopsolo .loop{border:0;padding:0;background:transparent}
+#loopsolo h2{font-size:1.9rem}
+#loopsolo .loopcap{font-size:1.25rem}
+body.loopmode .loop .row,body.loopmode .loop .small{display:none}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Meridian Devices: the board meeting<small>MG5565 International Management · Lecture 3 recap · an illustrative model, not data</small></h1>
+  <nav class="tabs" aria-label="Mode">
+    <button id="tab-play" aria-pressed="true">Play as a pair</button>
+    <button id="tab-class" aria-pressed="false">Run it for the class</button>
+  </nav>
+</header>
+<main id="app"></main>
+<div id="loopsolo"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   MODEL. Every effect is [points, reason]. The reasons are shown to students.
+   ===================================================================== */
+const START = {profit:50, esgA:50, esgB:50, trust:50, circ:30};
+const METRICS = [
+  {k:"profit", name:"Profit", def:"Operating profit index. 50 is where you start."},
+  {k:"esgA",  name:"ESG, Rater A", def:"Scores what the firm does: audits, emissions, waste."},
+  {k:"esgB",  name:"ESG, Rater B", def:"Scores what the firm discloses and how exposed it is to controversy."},
+  {k:"trust", name:"Public trust", def:"How customers, retailers and NGOs rate the firm."},
+  {k:"circ",  name:"Circularity", def:"Share of material that comes back through a loop. Starts at 30."}
+];
+const NAME = Object.fromEntries(METRICS.map(m=>[m.k,m.name]));
+const clamp = v => Math.max(0, Math.min(100, v));
+const E=(p,a,b,t,c)=>({profit:p,esgA:a,esgB:b,trust:t,circ:c});
+
+const ROUNDS = [
+ { id:"cobalt", title:"Round 1. The cobalt contract", lens:"Freeman’s stakeholders, and Berkey’s (2021) argument that firms profiting from injustice owe duties to the people it harms.",
+   scene:"Meridian’s batteries need cobalt. Part of your supplier’s cobalt comes from artisanal mines that cannot be audited. Procurement says tracing will raise costs and shrink the supplier pool.",
+   think:["Who bears the cost if this supply chain is exposed? Who is not at this table?","Is “it is legal” enough for the firm to act?","Which rater would notice each option, and why?"],
+   fac:"Read the situation aloud (30 seconds). Pairs discuss for 90 seconds using the three prompts. Take votes. Ask someone who voted for the least popular option what would change their mind. After you apply the decision, read the reason for Rater B and ask: why did Rater B move by a different amount from Rater A? (Disclosure and controversy.) Link back to Freeman versus Friedman.",
+   options:[
+    {k:"A", label:"Keep buying on the spot market", detail:"Lowest cost. No way to check where the cobalt came from.",
+     now:E([14,"There is no audit or tracing bill and the supply is the cheapest, so the whole saving lands in profit."],
+           [-6,"Rater A scores practice. Buying cobalt from sources that cannot be audited is weak supply-chain practice."],
+           [-10,"Rater B scores disclosure and exposure to controversy. You have nothing to disclose and a visible weak point, so it marks you down more than Rater A."],
+           [0,"Nobody outside knows yet, so trust has not moved. That is exactly the risk."],
+           [0,"Virgin material in, no recovery."]),
+     later:()=>({d:{profit:[-4,"Legal fees, supply disruption and re-sourcing after exposure. This is an average cost: a real exposure may not happen, or may cost far more."],trust:[-10,"If a journalist or NGO traces your cobalt, customers and retailers react."],esgB:[-6,"Controversy reaches Rater B’s inputs first."]}, note:"Expected cost of exposure. The model charges an average, not a certainty."})},
+    {k:"B", label:"Pay for independent audits and traceability", detail:"Higher cost. Fewer approved suppliers. You can show your evidence.",
+     now:E([-8,"Audits and tracing systems cost money, and fewer approved suppliers means less bargaining power."],
+           [8,"Rater A sees audited, traceable practice."],
+           [10,"Rater B gives more credit than Rater A because you can disclose the evidence."],
+           [5,"Retailers can see the evidence, but few customers notice supply-chain detail, so the gain is modest."],
+           [0,"Better oversight, but material still flows one way: take, make, dispose."]),
+     later:()=>null},
+    {k:"C", label:"Switch to recycled cobalt on long-term contracts", detail:"Highest cost. Thinner supply, locked-in contracts, a real circular loop.",
+     now:E([-14,"Recycled cobalt on locked-in contracts is the costliest route: premium prices and fixed volumes."],
+           [12,"Best practice score: a lower-impact input and no new mining for that share of supply."],
+           [6,"Rater B gives credit, but less than for audits, because there is less supply-chain evidence to disclose. This is a modelling assumption."],
+           [4,"A good story, but hard for customers to see."],
+           [15,"More of your material comes from recovered stock, so the recycling loop grows by 15 points."]),
+     later:()=>({d:{profit:[-3,"Thin supply and lock-in cost you when demand or prices move."]}, note:"Supply is thinner and you are locked into the contracts."})}
+   ]},
+ { id:"pack", title:"Round 2. The packaging problem", lens:"The circular economy (Kirchherr, Reike and Hekkert, 2017): recycling is one loop near the end, and repair and reuse come first. Also the triple bottom line.",
+   scene:"An NGO publishes photos of your plastic packaging washing up on a beach. Two big retailers ask what you will do.",
+   think:["Which loop does each option open on the diagram? Watch it as you decide.","Who pays for each option: you, customers or a supplier?","Is a pledge a decision or a delay?"],
+   fac:"Pairs discuss for 90 seconds. After applying the decision, point at the animation: which loop has opened? Ask why reuse (C) moves circularity by only 8 points while recycled cobalt moved it by 15 (the model assumes some customers resist the 3% price rise). Is that realistic? Link to the circular economy slide: recycling is one loop; repair and reuse come first.",
+   options:[
+    {k:"A", label:"Keep the packaging and publish a pledge", detail:"Cheapest. Words, not changes.",
+     now:E([6,"Cheap packaging stays, so profit rises a little."],
+           [-4,"Rater A sees no change in practice, and plastic waste counts against you."],
+           [-5,"The NGO exposé is a controversy. A pledge without action does not offset it."],
+           [-8,"Retailers and customers see a pledge with no change and discount it."],
+           [0,"No new loop opens."]),
+     later:()=>null},
+    {k:"B", label:"Launch a take-back scheme", detail:"Costs now. Recovered material has some resale value later.",
+     now:E([-8,"Collection, sorting and logistics cost money up front."],
+           [6,"Rater A rewards a real take-back system."],
+           [5,"Rater B rewards a scheme that is public and easy to report."],
+           [6,"Customers and retailers see an action that answers the NGO."],
+           [12,"Returned products and packaging flow back into remanufacturing: the take-back loop opens."]),
+     later:()=>({d:{profit:[4,"Recovered material and parts are worth something, after a lag."]}, note:"The scheme starts to pay back."})},
+    {k:"C", label:"Redesign as reusable and raise prices by 3%", detail:"Customers share the cost. Some may not accept it.",
+     now:E([-2,"Costs rise, but customers pay 3% more, which covers most of it."],
+           [8,"Reusable design avoids waste at source, which Rater A rewards most."],
+           [3,"Less public reporting than a scheme, so Rater B gives less."],
+           [-3,"Not everyone welcomes a price rise."],
+           [8,"Reuse keeps the product itself in use. It is the highest-priority loop, but uptake is partial here because customers pay more, so it moves fewer points than recycling."]),
+     later:()=>({d:{profit:[-3,"Some price-sensitive customers drift to cheaper rivals."]}, note:"Some customers leave."})}
+   ]},
+ { id:"claim", title:"Round 3. The headline", lens:"Say versus do: the greenwash cases (KLM, Amsterdam District Court 2024; Ryanair, UK ASA 2020). Comparative claims need comparative evidence.",
+   scene:"Marketing wants a campaign line. What you can truthfully say depends on what you did in Rounds 1 and 2.",
+   extra:(m,ch)=>`Right now your Rater A score (what you do) is <b>${m.esgA}</b>. A claim to be the greenest needs leading performance, which this model puts at about 70. Your cobalt is <b>${ch[0]==="A"?"not traced":"traced or recycled"}</b>.`,
+   think:["Could a regulator or journalist test this claim tomorrow? What would they find?","What is the difference between a bold claim and a checkable one?","What does silence cost, and who notices?"],
+   fac:"Show the four greenwash cases from earlier if students need a reminder. Ask: could a regulator test your claim tomorrow? Point out that the scorecard shows exactly what is needed to back the claim. After applying, read the delayed effect at the start of Round 4: the claim is tested against practice then.",
+   options:[
+    {k:"A", label:"“The greenest phone on the market”", detail:"A big comparative claim. Strong if true, exposed if not.",
+     now:E([-2,"The campaign costs money."],[0,"Advertising does not change what you actually do."],[2,"Rater B notices the public claim."],[10,"A strong claim lifts trust for now."],[0,"No change in material flows."]),
+     later:(m)=>{const g=Math.max(0,70-m.esgA);
+        return g===0?{d:{},note:"Your performance supports the claim, so nothing breaks."}
+        :{d:{trust:[-Math.round(.7*g),`The claim is ${g} points ahead of your practice (Rater A ${m.esgA} against about 70 needed). When a regulator, court or NGO tests it, trust falls in proportion to the gap.`],esgB:[-Math.round(.4*g),"Rater B marks down a claim that fails a check."],profit:[-Math.round(.3*g),"Legal and rework costs."]},
+          note:`The gap between claim and practice is ${g} points. Comparative claims need comparative evidence.`};}},
+    {k:"B", label:"“Our cobalt is traced to audited suppliers”", detail:"A narrow claim that anyone can check.",
+     now:E([-2,"A smaller campaign, but it still costs money."],[2,"A small credit: you had to check the evidence to make the claim."],[4,"A specific, checkable disclosure is what Rater B rewards."],[4,"Credible, but narrow."],[0,"No change in material flows."]),
+     later:(m,ch)=>ch[0]==="A"?{d:{trust:[-12,"You are not tracing your cobalt, so a specific claim about tracing fails when someone checks."],esgB:[-8,"A false specific claim is a serious controversy for Rater B."],profit:[-3,"Legal and correction costs."]},note:"Your cobalt is not traced, so the claim fails a check."}
+        :{d:{},note:"The claim is true and checkable, so it holds."}},
+    {k:"C", label:"Say nothing publicly", detail:"No claim to defend. No credit for good practice either.",
+     now:E([2,"No campaign spend."],[0,"Practice is unchanged."],[-3,"Rater B scores disclosure, so silence costs you even when practice is good."],[-2,"Rivals are speaking and you are not."],[0,"No change in material flows."]),
+     later:()=>null}
+   ]},
+ { id:"std", title:"Round 4. Whose standard?", lens:"Universalist, ethnocentric and relativist approaches, and Donaldson’s (1996) middle path: core values plus local traditions.",
+   scene:"Your main assembly supplier is in a country where the law allows 70-hour weeks and independent unions are not permitted. Your group code says 48 hours.",
+   think:["Which option is universalist and which is relativist? Where is Donaldson’s middle path?","Who decides what counts as a core value?","Who pays: you, the supplier or the workers?"],
+   fac:"Ask students to name the three approaches and match them to A, B and C. Ask who decides what the core values are, and who pays. After applying, ask which option they would defend in front of the supplier’s workers, and which in front of investors.",
+   options:[
+    {k:"A", label:"Follow local law", detail:"Lowest cost. Legal in the host country. The relativist position.",
+     now:E([10,"Longer hours at a lower unit cost."],[-5,"Practice falls below your own group code."],[-8,"A gap between your code and your supplier’s practice is a disclosure risk."],[-6,"Retailers and customers notice if your standards depend on location."],[0,"No change in material flows."]),
+     later:()=>({d:{trust:[-6,"Working hours at your supplier become public, with pressure to match standards elsewhere."],esgB:[-4,"Controversy reaches Rater B."]},note:"Expected cost if the working hours become public."})},
+    {k:"B", label:"Apply the group code everywhere", detail:"One standard for all plants. Some suppliers may leave. The universalist position.",
+     now:E([-8,"You pay for compliance and for replacement suppliers."],[9,"The same standard everywhere raises practice."],[9,"One code and one standard is easy to disclose."],[5,"Consistent and easy to understand."],[0,"No change in material flows."]),
+     later:()=>({d:{profit:[-1,"A few suppliers leave and you pay to replace them."]},note:"A few suppliers leave."})},
+    {k:"C", label:"Group code, plus joint investment and a local NGO audit", detail:"Core values fixed, methods adapted locally. Slower. Donaldson’s middle path.",
+     now:E([-12,"Joint investment and NGO audits are the costliest route."],[9,"The code plus local capacity-building raises real practice."],[7,"Credit for the NGO audit, but joint investments are harder to report on a single scale."],[9,"Credible partners make it more believable."],[0,"No change in material flows."]),
+     later:()=>({d:{profit:[3,"Lower turnover and fewer disputes, after a lag."]},note:"Lower turnover and fewer disputes."})}
+   ]}
+];
+const NR = ROUNDS.length;
+
+/* apply an effect object {metric:[points, why]}; returns actual changes after capping at 0 and 100, plus the reasons */
+function applyE(m, eff){
+  const diff={}, why={};
+  for(const k of Object.keys(START)){
+    const e=eff&&eff[k]; const pts=e?e[0]:0; const before=m[k]; m[k]=clamp(before+pts); diff[k]=m[k]-before;
+    why[k]=e?e[1]+(diff[k]!==pts?" (Capped at the 0 to 100 scale.)":""):"";
+  }
+  return {diff, why};
+}
+/* circularity splits into three loops */
+function loopShares(ch){ return {rec:30+(ch[0]==="C"?15:0), rem:(ch[1]==="B"?12:0), reu:(ch[1]==="C"?8:0)}; }
+
+/* simulate(choices, k): k scales how strongly markets reward trust and ESG after Round 4 */
+function simulate(choices, k=1){
+  const m={...START}, steps=[], ledger=[{label:"Start", d:{...START}, start:true}]; let pending=null;
+  for(let r=0;r<NR;r++){
+    const step={r};
+    if(pending){ const a=applyE(m,pending.d); step.carry=a.diff; step.carryWhy=a.why; step.carryNote=pending.note; ledger.push({label:`Round ${r}: later effect of your decision`, d:a.diff}); }
+    const ch=choices[r]; if(!ch){ steps.push(step); return {steps,m,ledger,done:false}; }
+    const opt=ROUNDS[r].options.find(o=>o.k===ch);
+    pending = opt.later ? opt.later(m, choices) : null;
+    const a=applyE(m,opt.now); step.now=a.diff; step.nowWhy=a.why; step.opt=opt; steps.push(step);
+    ledger.push({label:`Round ${r+1}: option ${ch}`, d:a.diff});
+  }
+  const fin={};
+  if(pending){ const a=applyE(m,pending.d); fin.carry=a.diff; fin.carryWhy=a.why; fin.carryNote=pending.note; ledger.push({label:`Round ${NR}: later effect of your decision`, d:a.diff}); }
+  const avgESG=(m.esgA+m.esgB)/2;
+  const bump=Math.round(k*(0.15*(m.trust-50)+0.10*(avgESG-50)));
+  const a=applyE(m,{profit:[bump,"Markets respond to trust and ESG scores."]}); fin.bump=bump; fin.formula={trust:m.trust,avg:avgESG,k};
+  ledger.push({label:"Years two and three: market response", d:a.diff});
+  return {steps,m,fin,ledger,done:true};
+}
+
+/* =====================================================================
+   THE LOOP ANIMATION (shared by the game and the standalone #loop view)
+   ===================================================================== */
+const Loop=(()=>{
+  const NS="http://www.w3.org/2000/svg";
+  const el=document.createElement("section"); el.className="panel loop";
+  el.innerHTML=`<h2>The material loop</h2>
+   <svg viewBox="-30 0 820 340" role="img" aria-label="Animated diagram of material flowing from raw materials through design and make to use, then returning through loops or leaving as waste"></svg>
+   <p class="loopcap" aria-live="polite"></p>
+   <div class="row"><button class="btn ghost" type="button">Pause the animation</button></div>
+   <p class="small">Each dot is a unit of material. Mint dots are coming back into production. Coral dots are lost as waste. Compare with the circular economy slide: recycling is one loop near the end, and repair and reuse come first.</p>`;
+  const svg=el.querySelector("svg"), cap=el.querySelector(".loopcap"), btn=el.querySelector("button");
+  const mk=(t,a,p)=>{const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); (p||svg).appendChild(e); return e;};
+  const D={ L1:"M60,170 L250,170", L2:"M250,170 L450,170", WST:"M450,170 L690,170",
+            REM:"M440,170 C440,10 250,10 250,170", REU:"M470,170 C525,45 415,45 450,170", REC:"M450,170 C450,330 60,330 60,170" };
+  const P={}; const base={};
+  base.REC=mk("path",{d:D.REC,fill:"none","stroke-linecap":"round"}); base.REM=mk("path",{d:D.REM,fill:"none","stroke-linecap":"round"}); base.REU=mk("path",{d:D.REU,fill:"none","stroke-linecap":"round"});
+  base.L1=mk("path",{d:D.L1,fill:"none",stroke:"#B9C4E0","stroke-width":10,"stroke-linecap":"round"}); base.L2=mk("path",{d:D.L2,fill:"none",stroke:"#B9C4E0","stroke-width":10,"stroke-linecap":"round"});
+  base.WST=mk("path",{d:D.WST,fill:"none",stroke:"#C93A45","stroke-linecap":"round"});
+  for(const k in D) P[k]=base[k];
+  const dotsG=mk("g",{});
+  const node=(x,y,w,t,fill,stroke,tc)=>{const g=mk("g",{}); mk("rect",{x:x-w/2,y:y-20,width:w,height:40,rx:10,fill,stroke,"stroke-width":2},g); const tx=mk("text",{x,y:y+6,"text-anchor":"middle","font-size":18,"font-weight":700,fill:tc||"#1B2340"},g); tx.textContent=t; return tx;};
+  node(60,170,140,"Raw materials","#fff","#1E2761"); node(250,170,170,"Design and make","#fff","#1E2761"); node(450,170,90,"Use","#fff","#1E2761"); node(690,170,100,"Waste","#FDECEE","#C93A45","#C93A45");
+  const tRec=node(255,290,190,"Recycle","#fff","#017a5f","#017a5f");
+  const tRem=node(345,50,230,"Remanufacture","#fff","#017a5f","#017a5f");
+  const tReu=node(600,76,200,"Repair and reuse","#fff","#017a5f","#017a5f");
+  const tLin=mk("text",{x:150,y:140,"font-size":15,fill:"#4F5F82","text-anchor":"middle"}); tLin.textContent="take, make, dispose";
+  const target={rec:30,rem:0,reu:0}, cur={rec:30,rem:0,reu:0};
+  let capOverride=null, paused=false, last=0, acc=0; const dots=[]; const MAXD=30;
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function style(){
+    const t=cur.rec+cur.rem+cur.reu, w=100-t;
+    [["REC","rec"],["REM","rem"],["REU","reu"]].forEach(([p,s])=>{ const v=cur[s];
+      if(v<0.5){ base[p].setAttribute("stroke","#C9D2E8"); base[p].setAttribute("stroke-width",3); base[p].setAttribute("stroke-dasharray","6 6"); }
+      else { base[p].setAttribute("stroke","#02C39A"); base[p].setAttribute("stroke-width",(4+v*0.22).toFixed(1)); base[p].removeAttribute("stroke-dasharray"); } });
+    base.WST.setAttribute("stroke-width",(3+w*0.14).toFixed(1));
+    const pc=s=>cur[s]<0.5?"off":Math.round(cur[s])+"%";
+    tRec.textContent=`Recycle · ${pc("rec")}`; tRem.textContent=`Remanufacture · ${pc("rem")}`; tReu.textContent=`Repair, reuse · ${pc("reu")}`;
+  }
+  function caption(){
+    if(capOverride){cap.textContent=capOverride;return;}
+    const t=target.rec+target.rem+target.reu, open=[]; if(target.rec>0)open.push("recycling"); if(target.rem>0)open.push("take-back and remanufacture"); if(target.reu>0)open.push("repair and reuse");
+    cap.textContent=`Circularity ${t}: ${t} of every 100 units come back through a loop and ${100-t} leave as waste. Open loops: ${open.join(", ")||"none"}.`;
+  }
+  function pick(){ const r=Math.random()*100; if(r<target.rec)return "REC"; if(r<target.rec+target.rem)return "REM"; if(r<target.rec+target.rem+target.reu)return "REU"; return "WST"; }
+  const len={}; function lens(){ for(const k in P) len[k]=P[k].getTotalLength(); }
+  function spawn(seg,d){ const c=mk("circle",{r:5.5,fill:"#1E2761",stroke:"#fff","stroke-width":1.5},dotsG); dots.push({seg:seg||"L1",d:d||0,c}); }
+  function colour(seg){ return seg==="WST"?"#C93A45":(seg==="L1"||seg==="L2")?"#1E2761":"#02C39A"; }
+  function draw(d){ const p=P[d.seg].getPointAtLength(Math.min(d.d,len[d.seg])); d.c.setAttribute("cx",p.x.toFixed(1)); d.c.setAttribute("cy",p.y.toFixed(1)); d.c.setAttribute("fill",colour(d.seg)); }
+  function next(d){
+    if(d.seg==="L1") d.seg="L2"; else if(d.seg==="L2"||d.seg==="REU") d.seg=pick();
+    else if(d.seg==="REM") d.seg="L2"; else if(d.seg==="REC") d.seg="L1";
+    else if(d.seg==="WST"){ d.seg="L1"; }
+    d.d=0;
+  }
+  function seed(){ for(let i=0;i<MAXD;i++){ const segs=["L1","L2","L1","L2","REC","REM","WST"]; const s=segs[i%segs.length]; spawn(s,Math.random()*len[s]); } dots.forEach(draw); }
+  function frame(ts){
+    const dt=Math.min(0.05,(ts-last)/1000||0); last=ts;
+    for(const s of ["rec","rem","reu"]) cur[s]+=(target[s]-cur[s])*Math.min(1,dt*3);
+    style();
+    if(!paused){ dots.forEach(d=>{ d.d+=dt*(d.seg==="REU"?110:150); if(d.d>=len[d.seg]) next(d); draw(d); }); }
+    requestAnimationFrame(frame);
+  }
+  btn.addEventListener("click",()=>{ paused=!paused; btn.textContent=paused?"Play the animation":"Pause the animation"; });
+  document.addEventListener("visibilitychange",()=>{last=performance.now();});
+  let started=false;
+  function start(){ if(started) return; started=true; lens(); seed(); style(); caption(); if(reduce){ paused=true; btn.textContent="Play the animation"; } requestAnimationFrame(frame); }
+  return { el, start,
+    setShares(s,text,snap){ target.rec=s.rec; target.rem=s.rem; target.reu=s.reu; if(snap){cur.rec=s.rec;cur.rem=s.rem;cur.reu=s.reu;} capOverride=text||null; caption(); },
+    setTitle(t){ el.querySelector("h2").textContent=t; } };
+})();
+
+/* =====================================================================
+   UI
+   ===================================================================== */
+const $=s=>document.querySelector(s), app=$("#app");
+const S={mode:"play", stage:"intro", r:0, choices:[], pick:null, reason:"", votes:{A:0,B:0,C:0}, k:1, delta:null, carry:null};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=n=>n>0?`<span class="up">▲ ${n}</span>`:n<0?`<span class="down">▼ ${Math.abs(n)}</span>`:`<span class="flat">no change</span>`;
+const sgn=n=>n>0?`<span class="up">+${n}</span>`:n<0?`<span class="down">−${Math.abs(n)}</span>`:`<span class="flat">0</span>`;
+const currentM=()=>simulate(S.choices,S.k).m;
+
+function scorecard(m, delta){
+  const chip=d=>d?` <span class="chip">${d>0?`<span class="up">▲ ${d}</span>`:`<span class="down">▼ ${Math.abs(d)}</span>`}</span>`:"";
+  const lo=Math.min(m.esgA,m.esgB), hi=Math.max(m.esgA,m.esgB);
+  const one=(k)=>`<div class="metric"><div class="mhead"><span class="mname">${NAME[k]}</span><span class="mval">${m[k]}${chip(delta&&delta[k])}</span></div>
+      <div class="track" role="img" aria-label="${NAME[k]} ${m[k]} out of 100"><span class="mid"></span><i style="left:${m[k]}%"></i></div><div class="mdef">${METRICS.find(x=>x.k===k).def}</div></div>`;
+  return `<aside class="panel" aria-label="Scorecard"><h2>Scorecard</h2>${one("profit")}
+   <div class="metric"><div class="mhead"><span class="mname">ESG: two raters</span></div>
+    <div class="mhead"><span>Rater A (what you do)</span><span class="mval">${m.esgA}${chip(delta&&delta.esgA)}</span></div>
+    <div class="mhead"><span>Rater B (what you disclose)</span><span class="mval">${m.esgB}${chip(delta&&delta.esgB)}</span></div>
+    <div class="track" role="img" aria-label="Rater A ${m.esgA}, Rater B ${m.esgB}, gap ${hi-lo}"><span class="mid"></span><span class="gap" style="left:${lo}%;width:${hi-lo}%"></span><i style="left:${m.esgA}%"></i><i class="b" style="left:${m.esgB}%"></i></div>
+    <div class="mdef">Circle is Rater A, diamond is Rater B, amber bar is the gap: <b>${hi-lo}</b> points. Which rater would you quote to investors?</div></div>
+   ${one("trust")}${one("circ")}
+   <div class="legend">Each score is an index from 0 to 100. ▲ and ▼ show the latest change. All numbers are assumptions made for teaching.</div></aside>`;
+}
+function progress(){ return `<div class="progress" aria-hidden="true">${ROUNDS.map((_,i)=>`<span class="${(i<S.r||S.stage==="end")?"done":i===S.r?"now":""}"></span>`).join("")}</div>`; }
+
+function whyList(diff, why, keys){ return `<ul class="why">${(keys||METRICS.map(m=>m.k)).map(k=>`<li><span class="mn">${NAME[k]}</span><span>${sgn(diff[k])}</span><span class="rs">${esc(why[k]||"")}</span></li>`).join("")}</ul>`; }
+function raterLine(diff){ return (Math.abs(diff.esgA-diff.esgB)>=2)?`<div class="hint"><b>Why do the two raters differ?</b> Rater A reacts to what you do. Rater B reacts to what you disclose and how exposed you are to controversy. The same decision can move them by different amounts. This is the pattern in Berg, Koelbel and Rigobon (2022): raters measure different things.</div>`:""; }
+
+function render(){
+  document.body.classList.toggle("class-mode",S.mode==="class");
+  $("#tab-play").setAttribute("aria-pressed",S.mode==="play"); $("#tab-class").setAttribute("aria-pressed",S.mode==="class");
+  const m=currentM(); let main="";
+  if(S.stage==="intro") main=intro(); else if(S.stage==="round") main=roundView(m); else if(S.stage==="result") main=resultView(m); else main=endView(m);
+  app.innerHTML=`<div class="grid"><div>${main}</div><div class="stack">${scorecard(m,S.delta)}<div id="loopmount"></div></div></div>`+(S.mode==="class"?classResults():"");
+  $("#loopmount").appendChild(Loop.el);
+  Loop.setShares(loopShares(S.choices));
+  wire(); if(S.mode==="class") wireClass();
+}
+
+function intro(){
+  const how=`<h3>How it works</h3><ol class="steps">
+   <li><b>Read</b> the situation (30 seconds).</li>
+   <li><b>Discuss in your pair</b> for about two minutes. Use the “Think first” questions: who gains, who loses, what could go wrong?</li>
+   <li><b>Decide</b> and write one sentence of reasoning. The reason matters more than the option.</li>
+   <li><b>Read why the scores moved.</b> Each change has a reason. Do you agree with the model? Disagreeing is part of the exercise.</li></ol>
+   <h3>How to read the page</h3>
+   <p class="scene">The scorecard shows five scores. ▲ and ▼ show what just changed. There are two ESG scores because two real-world raters often disagree. The loop diagram shows how much of your material comes back (mint) or is lost (coral): it moves when your decisions change circularity.</p>
+   <p class="scene">There is no winning combination, and every number is an assumption. Expect about 4 minutes per round, so about 20 minutes in all.</p>`;
+  if(S.mode==="play") return `<section class="panel"><h2>You are the board of Meridian Devices</h2>
+   <p class="scene">Meridian makes phones. You will take four decisions, one at a time, in pairs. After each one you will see what moved on the scorecard and why.</p>${how}
+   <h3>At the end</h3><p class="scene">You get a four-letter code, such as BCAB. Post it on the Padlet with your group number.</p>
+   <div class="row"><button class="btn" id="start">Start the meeting</button></div></section>`;
+  return `<section class="panel"><h2>Class mode</h2>
+   <p class="scene">For each round, read the dilemma aloud, let pairs argue it out, then enter the class votes (from PollEverywhere or a show of hands). The most popular option is applied, and the scorecard and loop move. Ties are decided by you.</p>${how}
+   <details class="fac"><summary>Facilitator run sheet (not for projection)</summary>
+    <p><b>Timing, about 24 minutes.</b> Set-up 2, four rounds at about 4 each (16), final debrief 4, plot the class codes 2 (optional). Cut rounds 1 and 4 if you only have 12 minutes: Rounds 2 and 3 carry the circular economy and greenwash links, but the codes will then not match the four-letter format.</p>
+    <p><b>Before you start.</b> Open the Padlet. Prepare one PollEverywhere A/B/C item per round, or use hands up. Keep the loop diagram in view: it is the visual link to the circular economy slide.</p>
+    <p><b>At the end.</b> Paste the group codes into the box at the bottom of the page. Use the “Market reward” slider to show how the conclusion depends on an assumption nobody has measured.</p></details>
+   <div class="row"><button class="btn" id="start">Start the meeting</button></div></section>`;
+}
+
+function roundView(m){
+  const R=ROUNDS[S.r]; const extra=R.extra?`<div class="hint">${R.extra(m,S.choices)}</div>`:"";
+  const carry=(S.carry&&S.carryWhy)?`<div class="note"><b>Carried over from Round ${S.r}:</b> ${esc(S.carryNote||"")}${whyList(S.carry,S.carryWhy,Object.keys(S.carry).filter(k=>S.carry[k]!==0))}</div>`:"";
+  const think=`<div class="think"><b>Think first (about 2 minutes). Your lens: </b>${esc(R.lens)}<ul>${R.think.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>`;
+  let ctl="";
+  if(S.mode==="play"){
+    ctl=`<div class="opts" role="group" aria-label="Options">${R.options.map(o=>`<button class="opt" data-k="${o.k}" aria-pressed="${S.pick===o.k}"><b>${o.k}. ${esc(o.label)}</b><span>${esc(o.detail)}</span></button>`).join("")}</div>
+     <label class="lbl" for="why">Your reason, in one sentence</label>
+     <textarea id="why" placeholder="We chose this because…">${esc(S.reason)}</textarea>
+     <div class="row"><button class="btn" id="lock" ${S.pick&&S.reason.trim().length>=8?"":"disabled"}>Record the decision</button><span class="small">Pick an option and write a reason to continue.</span></div>`;
+  } else {
+    const tot=S.votes.A+S.votes.B+S.votes.C;
+    ctl=`<div class="votes">${R.options.map(o=>`<div class="vote"><div><b>${o.k}. ${esc(o.label)}</b><div class="small">${esc(o.detail)}</div></div><input type="number" min="0" inputmode="numeric" aria-label="Votes for ${o.k}" data-v="${o.k}" value="${S.votes[o.k]||""}"></div>`).join("")}</div>
+     <div id="split">${splitBar()}</div><div class="row" id="tie"></div>
+     <div class="row"><button class="btn" id="applyvote" ${tot>0?"":"disabled"}>Apply the board decision</button><span class="small">Votes counted: <b id="tot">${tot}</b></span></div>
+     <details class="fac"><summary>Facilitator notes for this round (not for projection)</summary><p>${esc(R.fac)}</p></details>`;
+  }
+  return `<section class="panel">${progress()}<h2>${R.title}</h2>${carry}<p class="scene">${R.scene}</p>${extra}${think}${ctl}</section>`;
+}
+function splitBar(){ const t=S.votes.A+S.votes.B+S.votes.C; if(!t) return ""; return `<div class="split" aria-label="Vote split">${["A","B","C"].map(k=>S.votes[k]?`<div class="s${k}" style="flex:${S.votes[k]}">${k} ${Math.round(100*S.votes[k]/t)}%</div>`:"").join("")}</div>`; }
+function leaders(){ const mx=Math.max(S.votes.A,S.votes.B,S.votes.C); return ["A","B","C"].filter(k=>S.votes[k]===mx&&mx>0); }
+
+function resultView(m){
+  const R=ROUNDS[S.r], st=simulate(S.choices,S.k).steps[S.r], o=st.opt;
+  const circNote=(st.now.circ>0)?`<div class="hint"><b>Look at the loop.</b> Circularity rose by ${st.now.circ}, so a loop has opened or widened on the diagram. Which one, and is it the kind of loop the circular economy slide puts first?</div>`:"";
+  return `<section class="panel">${progress()}<h2>${R.title}</h2>
+   <p class="scene"><b>Decision: ${o.k}. ${esc(o.label)}</b></p>
+   ${S.mode==="play"&&S.reason?`<p class="small">Your reason: “${esc(S.reason)}”</p>`:""}
+   <h3>What moved now, and why</h3>${whyList(st.now,st.nowWhy)}${raterLine(st.now)}${circNote}
+   <div class="think"><b>Check your reasoning.</b> Does the model’s reason match yours? Name one score you would argue with, and the evidence you would want.</div>
+   <p class="small">Some effects arrive later. You will see them, with reasons, at the start of the next round.</p>
+   <div class="row"><button class="btn" id="next">${S.r===NR-1?"See the final result":"Next round"}</button></div>
+   ${S.mode==="class"?`<details class="fac"><summary>Facilitator notes for this round (not for projection)</summary><p>${esc(R.fac)}</p></details>`:""}</section>`;
+}
+
+function driverText(ledger,k){
+  const ev=ledger.filter(e=>!e.start&&e.d[k]!==0);
+  if(!ev.length) return `${NAME[k]} did not move.`;
+  const up=ev.filter(e=>e.d[k]>0).sort((a,b)=>b.d[k]-a.d[k])[0], dn=ev.filter(e=>e.d[k]<0).sort((a,b)=>a.d[k]-b.d[k])[0];
+  return `<b>${NAME[k]}</b>: ${up?`biggest lift, ${esc(up.label.toLowerCase())} (+${up.d[k]})`:"no lifts"}; ${dn?`biggest drag, ${esc(dn.label.toLowerCase())} (−${Math.abs(dn.d[k])})`:"no drags"}.`;
+}
+function profileText(m){
+  const e=(m.esgA+m.esgB)/2;
+  if(m.profit>=50&&e<50) return "<b>A profit-first board.</b> You finished ahead on profit by accepting low ESG scores and low trust. Which stakeholder bore the cost? Friedman would defend this within the law; Freeman would ask who was left out. Remember that the model charged only an average cost for exposure: a real exposure could have hit much harder.";
+  if(m.profit<40&&e>=65) return "<b>A stakeholder-first board.</b> You finished with strong ESG and trust but weak profit in the short run. Compare Orlitzky, Schmidt and Rynes (2003): on average the link to financial performance is positive, but it depends on how each is measured, and it can take time. In this model the market response is small and slow.";
+  return "<b>A mixed board.</b> You traded some profit for some ESG and trust. The useful question is which of your four decisions you would defend to a sceptical investor, and which to a sceptical NGO.";
+}
+function ledgerTable(ledger,m){
+  const rows=ledger.map(e=>`<tr><td>${esc(e.label)}</td>${Object.keys(START).map(k=>`<td class="n">${e.start?e.d[k]:sgn(e.d[k])}</td>`).join("")}</tr>`).join("");
+  return `<div class="tscroll"><table><thead><tr><th>Event</th><th class="n">Profit</th><th class="n">ESG A</th><th class="n">ESG B</th><th class="n">Trust</th><th class="n">Circ.</th></tr></thead><tbody>${rows}<tr class="tot"><td>Final score</td>${Object.keys(START).map(k=>`<td class="n">${m[k]}</td>`).join("")}</tr></tbody></table></div>`;
+}
+
+function endView(m){
+  const r=simulate(S.choices,S.k), fin=r.fin, codes=S.choices.join(""), gap=Math.abs(r.m.esgA-r.m.esgB), f=fin.formula;
+  const codeBlock=S.mode==="play"?`<h3>Your board’s code</h3><p><span class="code" id="codeval">${codes}</span></p>
+    <p class="small">Post this on the Padlet with your group number, for example “G12 ${codes}”.</p><div class="row"><button class="btn ghost" id="copy">Copy the code</button></div>`:`<p class="small">Class decisions: <b>${codes}</b>. Paste group codes below to compare.</p>`;
+  const carry=fin.carryWhy?`<div class="note"><b>Carried over from Round ${NR}:</b> ${esc(fin.carryNote||"")}${whyList(fin.carry,fin.carryWhy,Object.keys(fin.carry).filter(k=>fin.carry[k]!==0))}</div>`:"";
+  const ls=loopShares(S.choices);
+  return `<section class="panel">${progress()}<h2>The board’s final result</h2>${carry}
+   <h3>Where every point came from</h3>
+   <p class="small">Read each row as a decision or a delayed effect. The last row is your scorecard.</p>${ledgerTable(r.ledger,r.m)}
+   <h3>The biggest drivers</h3><ul class="q">${["profit","esgA","esgB","trust","circ"].map(k=>`<li>${driverText(r.ledger,k)}</li>`).join("")}</ul>
+   <h3>Years two and three: how markets respond</h3>
+   <p class="scene">The model adds <b>k × (0.15 × (trust − 50) + 0.10 × (average ESG − 50))</b> to profit. With your numbers: ${f.k} × (0.15 × (${f.trust} − 50) + 0.10 × (${f.avg} − 50)) = <b>${fin.bump>0?"+":""}${fin.bump}</b>. The two coefficients and k are assumptions: nobody has measured them for Meridian. ${S.mode==="class"?"Move the slider and watch the ranking of strategies change.":"Your lecturer may change k to show how the conclusion depends on it."}</p>
+   ${S.mode==="class"?`<div class="row"><label for="k">Market reward (k):</label><input type="range" id="k" min="0" max="4" step="0.5" value="${S.k}"><b id="kv">${S.k}×</b></div><p class="small">Ask students to predict what happens to an all-A board and an all-B board at k = 0 and k = 4 before you move the slider.</p>`:""}
+   <h3>What kind of board were you?</h3><p class="scene">${profileText(r.m)}</p>
+   <h3>Circularity: what the loop shows</h3>
+   <p class="scene">Your circularity is ${r.m.circ}: recycling ${ls.rec}, take-back ${ls.rem}, repair and reuse ${ls.reu}. ${100-r.m.circ} of every 100 units still leave as waste. Recycling is one loop near the end of the cycle, so a board that only recycles is not yet circular in the stronger sense on the circular economy slide.</p>
+   ${codeBlock}
+   <h3>Questions for your pair</h3>
+   <ol class="q"><li>Which stakeholder paid for your most profitable decision, and would Friedman or Freeman defend it?</li>
+   <li>Your two ESG scores differ by <b>${gap}</b> points. Why might two raters disagree, and which would you show investors? (Berg, Koelbel and Rigobon, 2022)</li>
+   <li>Which of your public claims could a regulator test, and what would they find?</li>
+   <li>Pick one assumption in the model that you would want evidence for before trusting it. What evidence would settle it?</li></ol>
+   <details><summary>Where do these numbers come from?</summary>
+   <p class="small" style="max-width:64ch">Nowhere. Every effect and coefficient is an assumption chosen to make the trade-offs visible, so treat the scores as illustrations, not findings. For evidence, compare Orlitzky, Schmidt and Rynes (2003), whose meta-analysis found a positive average link between social and financial performance that depends on how each is measured, and Berg, Koelbel and Rigobon (2022), who found that ESG ratings from different providers often disagree. Kirchherr, Reike and Hekkert (2017) found 114 definitions of the circular economy, so “circularity 30” here means one specific thing: the share of material that comes back through a loop. The Round 3 claims echo the KLM (Amsterdam District Court, 2024) and Ryanair (UK ASA, 2020) cases discussed earlier.</p></details>
+   ${S.mode==="class"?`<details class="fac"><summary>Facilitator debrief (not for projection)</summary><p>Read the ledger row by row. Ask: which single decision moved profit most, and which moved trust most? Then use the slider: predict first, then move k to 0 and to 4. Make the point that the ranking of strategies depends on a coefficient nobody measured. Close by asking each pair for the assumption they would most want evidence for. Link back to Orlitzky et al. (2003): the average link is positive, but the measurement matters.</p></details>`:""}
+   <div class="row"><button class="btn ghost" id="again">Start again</button></div></section>`;
+}
+
+function reset(){ S.stage="intro"; S.r=0; S.choices=[]; S.pick=null; S.reason=""; S.votes={A:0,B:0,C:0}; S.delta=null; S.carry=null; S.carryWhy=null; S.carryNote=null; }
+
+function wire(){
+  const on=(s,f)=>{const e=$(s); if(e) e.addEventListener("click",f);};
+  on("#start",()=>{S.stage="round"; S.carry=null; render();});
+  document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{S.pick=b.dataset.k; document.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed",x===b)); upd();}));
+  const w=$("#why"); if(w) w.addEventListener("input",()=>{S.reason=w.value; upd();});
+  on("#lock",()=>commit(S.pick));
+  on("#next",()=>{ if(S.r===NR-1){S.stage="end"; S.delta=null;} else { S.r++; S.stage="round"; S.pick=null; S.reason=""; S.votes={A:0,B:0,C:0};
+      const st=simulate(S.choices,S.k).steps[S.r]; S.delta=st.carry||null; S.carry=st.carry||null; S.carryWhy=st.carryWhy||null; S.carryNote=st.carryNote||null; } render(); window.scrollTo({top:0}); });
+  on("#again",()=>{reset(); render();});
+  on("#copy",()=>{const t=$("#codeval").textContent; if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>{$("#copy").textContent="Copied";}).catch(()=>{$("#copy").textContent="Select and copy the code";}); else $("#copy").textContent="Select and copy the code";});
+  const k=$("#k"); if(k) k.addEventListener("input",()=>{S.k=parseFloat(k.value); render(); const e=$("#k"); if(e) e.focus();});
+}
+function upd(){ const b=$("#lock"); if(b) b.disabled=!(S.pick&&S.reason.trim().length>=8); }
+function commit(opt){ S.choices[S.r]=opt; const st=simulate(S.choices,S.k).steps[S.r]; S.delta=st.now; S.stage="result"; S.carry=null; render(); window.scrollTo({top:0}); }
+function wireClass(){
+  document.querySelectorAll("[data-v]").forEach(i=>i.addEventListener("input",()=>{
+    S.votes[i.dataset.v]=Math.max(0,parseInt(i.value||"0",10)||0);
+    const t=S.votes.A+S.votes.B+S.votes.C; $("#tot").textContent=t; $("#split").innerHTML=splitBar();
+    const L=leaders(), tie=$("#tie"), ap=$("#applyvote");
+    if(L.length>1){ ap.disabled=true; tie.innerHTML=`<span>Tie between ${L.join(" and ")}. You decide:</span>`+L.map(k=>`<button class="btn ghost" data-tb="${k}">Choose ${k}</button>`).join(""); tie.querySelectorAll("[data-tb]").forEach(b=>b.addEventListener("click",()=>commit(b.dataset.tb))); }
+    else { tie.innerHTML=""; ap.disabled=t===0; }
+  }));
+  const ap=$("#applyvote"); if(ap) ap.addEventListener("click",()=>{const L=leaders(); if(L.length===1) commit(L[0]);});
+  const ta=$("#codes"); if(ta){ ta.value=CLS.text; ta.addEventListener("input",()=>{CLS.text=ta.value;}); }
+  const pb=$("#plot"); if(pb) pb.addEventListener("click",()=>{CLS.y=$("#ysel").value; CLS.kk=parseFloat($("#kk").value); plotClass();});
+  if(CLS.text) plotClass();
+}
+
+/* ---------- Class results ---------- */
+const CLS={text:"", y:"esgA", kk:1};
+function classResults(){
+  return `<section class="panel cls" style="margin-top:1.4rem"><h2>Where the class ended up</h2>
+   <p class="small" style="max-width:64ch">Paste the Padlet posts below, one per line, such as “G12 BCAB”. Any four-letter code made of A, B and C is read; other text is ignored. Nothing is sent anywhere: the codes are decoded in this browser.</p>
+   <label class="lbl" for="codes">Group codes</label><textarea id="codes" placeholder="G1 BCAB&#10;G2 AABA&#10;G3 CCBC"></textarea>
+   <div class="row"><label for="ysel">Vertical axis</label>
+   <select id="ysel"><option value="esgA">ESG, Rater A</option><option value="esgB">ESG, Rater B</option><option value="trust">Public trust</option><option value="circ">Circularity</option></select>
+   <label for="kk">Market reward (k)</label><select id="kk"><option>0</option><option>0.5</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select>
+   <button class="btn" id="plot">Plot the class</button></div><div id="plotout" aria-live="polite"></div></section>`;
+}
+function plotClass(){
+  const ysel=$("#ysel"); if(ysel) ysel.value=CLS.y; const kk=$("#kk"); if(kk) kk.value=String(CLS.kk);
+  const found=[]; (CLS.text||"").split(/\n/).forEach(line=>{ const m=line.match(/\b[ABCabc]{4}\b/); if(m) found.push(m[0].toUpperCase()); });
+  const out=$("#plotout"); if(!out) return;
+  if(!found.length){ out.innerHTML=`<p class="small">No codes found yet. Paste posts such as “G12 BCAB”.</p>`; return; }
+  const pts=found.map((c,i)=>({c, m:simulate(c.split(""),CLS.kk).m, i}));
+  const W=560,H=360,pad=48, X=v=>pad+(W-pad-14)*v/100, Y=v=>H-pad-(H-pad-14)*v/100;
+  const yl={esgA:"ESG, Rater A",esgB:"ESG, Rater B",trust:"Public trust",circ:"Circularity"}[CLS.y];
+  let g=""; for(let t=0;t<=100;t+=25){ g+=`<line x1="${X(t)}" x2="${X(t)}" y1="${Y(0)}" y2="${Y(100)}" stroke="#D5DCEB"/><line y1="${Y(t)}" y2="${Y(t)}" x1="${X(0)}" x2="${X(100)}" stroke="#D5DCEB"/><text x="${X(t)}" y="${H-pad+18}" text-anchor="middle" font-size="12" fill="#4F5F82">${t}</text><text x="${pad-8}" y="${Y(t)+4}" text-anchor="end" font-size="12" fill="#4F5F82">${t}</text>`; }
+  const dots=pts.map(p=>{const jx=((p.i*37)%11-5)*.45, jy=((p.i*53)%11-5)*.45; return `<circle cx="${X(Math.max(0,Math.min(100,p.m.profit+jx)))}" cy="${Y(Math.max(0,Math.min(100,p.m[CLS.y]+jy)))}" r="6" fill="#1E2761" fill-opacity=".55" stroke="#fff"><title>${p.c}: profit ${p.m.profit}, ${yl} ${p.m[CLS.y]}</title></circle>`;}).join("");
+  const mean=k=>pts.reduce((s,p)=>s+p.m[k],0)/pts.length, mx=mean("profit"), my=mean(CLS.y);
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter of ${pts.length} boards: profit against ${yl}" style="width:100%;max-width:640px;height:auto">${g}${dots}<path d="M${X(mx)-9},${Y(my)} h18 M${X(mx)},${Y(my)-9} v18" stroke="#C93A45" stroke-width="3"/>
+    <text x="${(W+pad)/2}" y="${H-8}" text-anchor="middle" font-size="13" fill="#1B2340">Profit index (final)</text><text transform="translate(14 ${H/2}) rotate(-90)" text-anchor="middle" font-size="13" fill="#1B2340">${yl} (final)</text></svg>`;
+  const names=["Cobalt","Packaging","Claim","Standard"];
+  const rows=names.map((n,r)=>{const cnt={A:0,B:0,C:0}; found.forEach(c=>cnt[c[r]]++); return `<tr><td>${n}</td>${["A","B","C"].map(k=>`<td>${k}: ${cnt[k]} (${Math.round(100*cnt[k]/found.length)}%)</td>`).join("")}</tr>`;}).join("");
+  out.innerHTML=`<p><b>${found.length}</b> boards read, <b>${new Set(found).size}</b> different combinations out of 81. The red cross is the class average.</p>${svg}
+   <h3>What the class chose</h3><table><thead><tr><th>Round</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody>${rows}</tbody></table>
+   <p class="small">Average final profit ${mx.toFixed(0)}, ${yl} ${my.toFixed(0)}. Change “Market reward” and plot again to see how much the picture depends on that assumption.</p>`;
+}
+
+/* ---------- modes ---------- */
+function setMode(m){ S.mode=m; reset(); history.replaceState(null,"","#"+m); render(); }
+$("#tab-play").addEventListener("click",()=>setMode("play"));
+$("#tab-class").addEventListener("click",()=>setMode("class"));
+
+/* standalone looping view, also used to record the GIF for the slides: open …/#loop */
+const LOOP_STATES=[
+ {t:"Linear: take, make, dispose", s:{rec:0,rem:0,reu:0}, c:"Every unit that is made ends as waste. Nothing comes back."},
+ {t:"Add recycling: one loop, near the end", s:{rec:30,rem:0,reu:0}, c:"30 of every 100 units are recovered. 70 are still lost. Recycling is one loop, but not the whole circular economy."},
+ {t:"Add take-back and remanufacture", s:{rec:30,rem:12,reu:0}, c:"Products come back and are rebuilt, so more of their value is kept. Circularity is now 42."},
+ {t:"Add repair and reuse", s:{rec:30,rem:12,reu:8}, c:"The product itself stays in use. This is the loop the circular economy tries first. Circularity is now 50."}
+];
+function loopView(){
+  document.body.classList.add("loopmode"); $("#loopsolo").appendChild(Loop.el); Loop.start();
+  let i=0; const go=()=>{ const st=LOOP_STATES[i%LOOP_STATES.length]; Loop.setTitle(st.t); Loop.setShares(st.s,st.c,i===0); i++; };
+  go(); setInterval(go,4500);
+}
+
+if(location.hash==="#loop"){ loopView(); }
+else { S.mode=location.hash==="#class"?"class":"play"; render(); Loop.start(); }
+</script>
+</body>
+</html>
