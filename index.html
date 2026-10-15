@@ -391,7 +391,7 @@ function intro(){
    <details class="fac"><summary>Facilitator run sheet (not for projection)</summary>
     <p><b>Timing, about 24 minutes.</b> Set-up 2, four rounds at about 4 each (16), final debrief 4, plot the class codes 2 (optional). Cut rounds 1 and 4 if you only have 12 minutes: Rounds 2 and 3 carry the circular economy and greenwash links, but the codes will then not match the four-letter format.</p>
     <p><b>Before you start.</b> Open the Padlet. Prepare one PollEverywhere A/B/C item per round, or use hands up. Keep the loop diagram in view: it is the visual link to the circular economy slide.</p>
-    <p><b>At the end.</b> Paste the group codes into the box at the bottom of the page. Use the “Market reward” slider to show how the conclusion depends on an assumption nobody has measured.</p></details>
+    <p><b>At the end.</b> Paste the group codes into the box at the bottom of the page. Use the “Market reward strength (k)” slider: k is how strongly the market rewards trust and ESG after Round 4 (0 = not at all, 1 = default, 4 = strongly). Moving it shows how much the ranking of boards depends on an assumption nobody has measured.</p></details>
    <div class="row"><button class="btn" id="start">Start the meeting</button></div></section>`;
 }
 
@@ -447,10 +447,16 @@ function ledgerTable(ledger,m){
   return `<div class="tscroll"><table><thead><tr><th>Event</th><th class="n">Profit</th><th class="n">ESG A</th><th class="n">ESG B</th><th class="n">Trust</th><th class="n">Circ.</th></tr></thead><tbody>${rows}<tr class="tot"><td>Final score</td>${Object.keys(START).map(k=>`<td class="n">${m[k]}</td>`).join("")}</tr></tbody></table></div>`;
 }
 
+const RSHORT=["Cobalt","Packaging","Claim","Standard"];
+function decodeList(code){ return `<ol class="small">${code.split("").map((c,i)=>{const o=ROUNDS[i].options.find(x=>x.k===c); return `<li><b>${c}</b> in Round ${i+1}, ${RSHORT[i].toLowerCase()}: ${esc(o?o.label:"(not a valid option)")}</li>`;}).join("")}</ol>`; }
+function keyTable(){ return `<table class="keytbl"><thead><tr><th>Round</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody>${ROUNDS.map((R,i)=>`<tr><td><b>${i+1}. ${RSHORT[i]}</b></td>${R.options.map(o=>`<td>${esc(o.label)}</td>`).join("")}</tr>`).join("")}</tbody></table>`; }
+
 function endView(m){
   const r=simulate(S.choices,S.k), fin=r.fin, codes=S.choices.join(""), gap=Math.abs(r.m.esgA-r.m.esgB), f=fin.formula;
   const codeBlock=S.mode==="play"?`<h3>Your board’s code</h3><p><span class="code" id="codeval">${codes}</span></p>
-    <p class="small">Post this on the Padlet with your group number, for example “G12 ${codes}”.</p><div class="row"><button class="btn ghost" id="copy">Copy the code</button></div>`:`<p class="small">Class decisions: <b>${codes}</b>. Paste group codes below to compare.</p>`;
+    <p class="small">Post this on the Padlet with your group number, for example “G12 ${codes}”.</p>
+    <p class="small"><b>How to read the code:</b> one letter per round, in order, and each letter is the option you chose.</p>
+    ${decodeList(codes)}<div class="row"><button class="btn ghost" id="copy">Copy the code</button></div>`:`<p class="small">Class decisions: <b>${codes}</b>. Paste group codes below to compare.</p>`;
   const carry=fin.carryWhy?`<div class="note"><b>Carried over from Round ${NR}:</b> ${esc(fin.carryNote||"")}${whyList(fin.carry,fin.carryWhy,Object.keys(fin.carry).filter(k=>fin.carry[k]!==0))}</div>`:"";
   const ls=loopShares(S.choices);
   return `<section class="panel">${progress()}<h2>The board’s final result</h2>${carry}
@@ -458,8 +464,10 @@ function endView(m){
    <p class="small">Read each row as a decision or a delayed effect. The last row is your scorecard.</p>${ledgerTable(r.ledger,r.m)}
    <h3>The biggest drivers</h3><ul class="q">${["profit","esgA","esgB","trust","circ"].map(k=>`<li>${driverText(r.ledger,k)}</li>`).join("")}</ul>
    <h3>Years two and three: how markets respond</h3>
-   <p class="scene">The model adds <b>k × (0.15 × (trust − 50) + 0.10 × (average ESG − 50))</b> to profit. With your numbers: ${f.k} × (0.15 × (${f.trust} − 50) + 0.10 × (${f.avg} − 50)) = <b>${fin.bump>0?"+":""}${fin.bump}</b>. The two coefficients and k are assumptions: nobody has measured them for Meridian. ${S.mode==="class"?"Move the slider and watch the ranking of strategies change.":"Your lecturer may change k to show how the conclusion depends on it."}</p>
-   ${S.mode==="class"?`<div class="row"><label for="k">Market reward (k):</label><input type="range" id="k" min="0" max="4" step="0.5" value="${S.k}"><b id="kv">${S.k}×</b></div><p class="small">Ask students to predict what happens to an all-A board and an all-B board at k = 0 and k = 4 before you move the slider.</p>`:""}
+   <p class="scene">${S.mode==="class"
+ ?`After the fourth round the model adds a market response to profit. If customers and investors trust the firm and rate its ESG above 50, profit rises; below 50, it falls. The strength of that response is a dial called <b>k</b>: at k = 0 the market ignores trust and ESG, at k = 1 (the default) the response is modest, and at k = 4 it is strong. The formula is <b>k × (0.15 × (trust − 50) + 0.10 × (average ESG − 50))</b>. With this board’s numbers: ${f.k} × (0.15 × (${f.trust} − 50) + 0.10 × (${f.avg} − 50)) = <b>${fin.bump>0?"+":""}${fin.bump}</b>. Neither k nor the two weights have been measured for Meridian, so move the slider below and watch how much the result depends on them.`
+ :`After the fourth round the model adds a market response to profit. If customers and investors trust the firm and rate its ESG above 50, profit rises; below 50, it falls. The formula is <b>0.15 × (trust − 50) + 0.10 × (average ESG − 50)</b>. With your numbers: 0.15 × (${f.trust} − 50) + 0.10 × (${f.avg} − 50) = <b>${fin.bump>0?"+":""}${fin.bump}</b>. The two weights are assumptions: nobody has measured them for Meridian.`}</p>
+   ${S.mode==="class"?`<div class="row"><label for="k">Market reward strength (k):</label><input type="range" id="k" min="0" max="4" step="0.5" value="${S.k}"><b id="kv">${S.k}×</b></div><p class="small">Ask students to predict what happens to an all-A board and an all-B board at k = 0 and k = 4 before you move the slider.</p>`:""}
    <h3>What kind of board were you?</h3><p class="scene">${profileText(r.m)}</p>
    <h3>Circularity: what the loop shows</h3>
    <p class="scene">Your circularity is ${r.m.circ}: recycling ${ls.rec}, take-back ${ls.rem}, repair and reuse ${ls.reu}. ${100-r.m.circ} of every 100 units still leave as waste. Recycling is one loop near the end of the cycle, so a board that only recycles is not yet circular in the stronger sense on the circular economy slide.</p>
@@ -500,6 +508,7 @@ function wireClass(){
     else { tie.innerHTML=""; ap.disabled=t===0; }
   }));
   const ap=$("#applyvote"); if(ap) ap.addEventListener("click",()=>{const L=leaders(); if(L.length===1) commit(L[0]);});
+  const ck=$("#chk"); if(ck) ck.addEventListener("input",()=>{const v=ck.value.toUpperCase(); $("#chkout").innerHTML=/^[ABC]{4}$/.test(v)?decodeList(v)+`<p class="small">Final scores at k = ${CLS.kk}: ${scoreLine(simulate(v.split(""),CLS.kk).m)}</p>`:(v?"Enter four letters, each A, B or C.":"");});
   const ta=$("#codes"); if(ta){ ta.value=CLS.text; ta.addEventListener("input",()=>{CLS.text=ta.value;}); }
   const pb=$("#plot"); if(pb) pb.addEventListener("click",()=>{CLS.y=$("#ysel").value; CLS.kk=parseFloat($("#kk").value); plotClass();});
   if(CLS.text) plotClass();
@@ -510,15 +519,18 @@ const CLS={text:"", y:"esgA", kk:1};
 function classResults(){
   return `<section class="panel cls" style="margin-top:1.4rem"><h2>Where the class ended up</h2>
    <p class="small" style="max-width:64ch">Paste the Padlet posts below, one per line, such as “G12 BCAB”. Any four-letter code made of A, B and C is read; other text is ignored. Nothing is sent anywhere: the codes are decoded in this browser.</p>
+   <details class="fac" open><summary>Code key: what each letter means</summary><p class="small">A code has four letters, one per round, in order. Each letter is the option a pair chose in that round.</p>${keyTable()}
+   <label class="lbl" for="chk" style="margin-top:.8rem">Check one code</label><input id="chk" maxlength="4" placeholder="e.g. BCAB" style="max-width:9rem;text-transform:uppercase"><div id="chkout" class="small" aria-live="polite"></div></details>
    <label class="lbl" for="codes">Group codes</label><textarea id="codes" placeholder="G1 BCAB&#10;G2 AABA&#10;G3 CCBC"></textarea>
    <div class="row"><label for="ysel">Vertical axis</label>
    <select id="ysel"><option value="esgA">ESG, Rater A</option><option value="esgB">ESG, Rater B</option><option value="trust">Public trust</option><option value="circ">Circularity</option></select>
-   <label for="kk">Market reward (k)</label><select id="kk"><option>0</option><option>0.5</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select>
+   <label for="kk">Market reward strength (k)</label><select id="kk"><option>0</option><option>0.5</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select>
    <button class="btn" id="plot">Plot the class</button></div><div id="plotout" aria-live="polite"></div></section>`;
 }
+function scoreLine(m){ return `profit ${m.profit}, ESG Rater A ${m.esgA}, Rater B ${m.esgB}, trust ${m.trust}, circularity ${m.circ}`; }
 function plotClass(){
   const ysel=$("#ysel"); if(ysel) ysel.value=CLS.y; const kk=$("#kk"); if(kk) kk.value=String(CLS.kk);
-  const found=[]; (CLS.text||"").split(/\n/).forEach(line=>{ const m=line.match(/\b[ABCabc]{4}\b/); if(m) found.push(m[0].toUpperCase()); });
+  const found=[], groups=[]; (CLS.text||"").split(/\n/).forEach(line=>{ const m=line.match(/\b[ABCabc]{4}\b/); if(m){ found.push(m[0].toUpperCase()); const g=line.replace(m[0],"").replace(/[:\-–,]/g," ").trim(); groups.push(g||("Group "+found.length)); } });
   const out=$("#plotout"); if(!out) return;
   if(!found.length){ out.innerHTML=`<p class="small">No codes found yet. Paste posts such as “G12 BCAB”.</p>`; return; }
   const pts=found.map((c,i)=>({c, m:simulate(c.split(""),CLS.kk).m, i}));
@@ -529,11 +541,13 @@ function plotClass(){
   const mean=k=>pts.reduce((s,p)=>s+p.m[k],0)/pts.length, mx=mean("profit"), my=mean(CLS.y);
   const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter of ${pts.length} boards: profit against ${yl}" style="width:100%;max-width:640px;height:auto">${g}${dots}<path d="M${X(mx)-9},${Y(my)} h18 M${X(mx)},${Y(my)-9} v18" stroke="#C93A45" stroke-width="3"/>
     <text x="${(W+pad)/2}" y="${H-8}" text-anchor="middle" font-size="13" fill="#1B2340">Profit index (final)</text><text transform="translate(14 ${H/2}) rotate(-90)" text-anchor="middle" font-size="13" fill="#1B2340">${yl} (final)</text></svg>`;
-  const names=["Cobalt","Packaging","Claim","Standard"];
+  const names=RSHORT;
   const rows=names.map((n,r)=>{const cnt={A:0,B:0,C:0}; found.forEach(c=>cnt[c[r]]++); return `<tr><td>${n}</td>${["A","B","C"].map(k=>`<td>${k}: ${cnt[k]} (${Math.round(100*cnt[k]/found.length)}%)</td>`).join("")}</tr>`;}).join("");
   out.innerHTML=`<p><b>${found.length}</b> boards read, <b>${new Set(found).size}</b> different combinations out of 81. The red cross is the class average.</p>${svg}
+   <h3>Each board, decoded</h3><div style="overflow-x:auto"><table><thead><tr><th>Group</th><th>Code</th><th>Profit</th><th>ESG A</th><th>ESG B</th><th>Trust</th><th>Circ.</th></tr></thead><tbody>${pts.map((p,i)=>`<tr><td>${esc(groups[i])}</td><td><b>${p.c}</b></td><td>${p.m.profit}</td><td>${p.m.esgA}</td><td>${p.m.esgB}</td><td>${p.m.trust}</td><td>${p.m.circ}</td></tr>`).join("")}</tbody></table></div>
+   <p class="small">Use the code key above to read any code. Scores are at k = ${CLS.kk}.</p>
    <h3>What the class chose</h3><table><thead><tr><th>Round</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody>${rows}</tbody></table>
-   <p class="small">Average final profit ${mx.toFixed(0)}, ${yl} ${my.toFixed(0)}. Change “Market reward” and plot again to see how much the picture depends on that assumption.</p>`;
+   <p class="small">Average final profit ${mx.toFixed(0)}, ${yl} ${my.toFixed(0)}. Change “Market reward strength (k)” and plot again to see how much the picture depends on that assumption.</p>`;
 }
 
 /* ---------- modes ---------- */
