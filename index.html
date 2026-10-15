@@ -211,17 +211,17 @@ const ROUNDS = [
      later:()=>null}
    ]},
  { id:"std", title:"Round 4. Whose standard?", lens:"Universalist, ethnocentric and relativist approaches, and Donaldson’s (1996) middle path: core values plus local traditions.",
-   scene:"Your main assembly supplier is in a country where the law allows 70-hour weeks and independent unions are not permitted. Your group code says 48 hours.",
+   scene:"Your main assembly supplier is in a country where the law allows 70-hour weeks and independent unions are not permitted. Your company’s code of conduct says 48 hours.",
    think:["Which option is universalist and which is relativist? Where is Donaldson’s middle path?","Who decides what counts as a core value?","Who pays: you, the supplier or the workers?"],
    fac:"Ask students to name the three approaches and match them to A, B and C. Ask who decides what the core values are, and who pays. After applying, ask which option they would defend in front of the supplier’s workers, and which in front of investors.",
    options:[
     {k:"A", label:"Follow local law", detail:"Lowest cost. Legal in the host country. The relativist position.",
-     now:E([10,"Longer hours at a lower unit cost."],[-5,"Practice falls below your own group code."],[-8,"A gap between your code and your supplier’s practice is a disclosure risk."],[-6,"Retailers and customers notice if your standards depend on location."],[0,"No change in material flows."]),
+     now:E([10,"Longer hours at a lower unit cost."],[-5,"Practice falls below your own code of conduct."],[-8,"A gap between your code of conduct and your supplier’s practice is a disclosure risk."],[-6,"Retailers and customers notice if your standards depend on location."],[0,"No change in material flows."]),
      later:()=>({d:{trust:[-6,"Working hours at your supplier become public, with pressure to match standards elsewhere."],esgB:[-4,"Controversy reaches Rater B."]},note:"Expected cost if the working hours become public."})},
-    {k:"B", label:"Apply the group code everywhere", detail:"One standard for all plants. Some suppliers may leave. The universalist position.",
-     now:E([-8,"You pay for compliance and for replacement suppliers."],[9,"The same standard everywhere raises practice."],[9,"One code and one standard is easy to disclose."],[5,"Consistent and easy to understand."],[0,"No change in material flows."]),
+    {k:"B", label:"Apply the company code of conduct everywhere", detail:"One standard for all plants. Some suppliers may leave. The universalist position.",
+     now:E([-8,"You pay for compliance and for replacement suppliers."],[9,"The same standard everywhere raises practice."],[9,"One code of conduct and one standard is easy to disclose."],[5,"Consistent and easy to understand."],[0,"No change in material flows."]),
      later:()=>({d:{profit:[-1,"A few suppliers leave and you pay to replace them."]},note:"A few suppliers leave."})},
-    {k:"C", label:"Group code, plus joint investment and a local NGO audit", detail:"Core values fixed, methods adapted locally. Slower. Donaldson’s middle path.",
+    {k:"C", label:"Code of conduct, plus joint investment and a local NGO audit", detail:"Core values fixed, methods adapted locally. Slower. Donaldson’s middle path.",
      now:E([-12,"Joint investment and NGO audits are the costliest route."],[9,"The code plus local capacity-building raises real practice."],[7,"Credit for the NGO audit, but joint investments are harder to report on a single scale."],[9,"Credible partners make it more believable."],[0,"No change in material flows."]),
      later:()=>({d:{profit:[3,"Lower turnover and fewer disputes, after a lag."]},note:"Lower turnover and fewer disputes."})}
    ]}
@@ -337,7 +337,7 @@ const Loop=(()=>{
    UI
    ===================================================================== */
 const $=s=>document.querySelector(s), app=$("#app");
-const S={mode:"play", stage:"intro", r:0, choices:[], pick:null, reason:"", votes:{A:0,B:0,C:0}, k:1, delta:null, carry:null};
+const S={mode:"play", group:"", stage:"intro", r:0, choices:[], pick:null, reason:"", votes:{A:0,B:0,C:0}, k:1, delta:null, carry:null};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=n=>n>0?`<span class="up">▲ ${n}</span>`:n<0?`<span class="down">▼ ${Math.abs(n)}</span>`:`<span class="flat">no change</span>`;
 const sgn=n=>n>0?`<span class="up">+${n}</span>`:n<0?`<span class="down">−${Math.abs(n)}</span>`:`<span class="flat">0</span>`;
@@ -384,14 +384,15 @@ function intro(){
    <p class="scene">There is no winning combination, and every number is an assumption. Expect about 4 minutes per round, so about 20 minutes in all.</p>`;
   if(S.mode==="play") return `<section class="panel"><h2>You are the board of Meridian Devices</h2>
    <p class="scene">Meridian makes phones. You will take four decisions, one at a time, in pairs. After each one you will see what moved on the scorecard and why.</p>${how}
-   <h3>At the end</h3><p class="scene">You get a four-letter code, such as BCAB. Post it on the Padlet with your group number.</p>
+   <h3>At the end</h3><p class="scene">You get a four-letter code, such as BCAB. Post it on the Padlet with your group name.</p>
+   <label class="lbl" for="gname">First, name your group (agree it with your partner)</label><input id="gname" maxlength="30" placeholder="for example: The Cobalt Crew" value="${esc(S.group||"")}" style="max-width:22rem">
    <div class="row"><button class="btn" id="start">Start the meeting</button></div></section>`;
   return `<section class="panel"><h2>Class mode</h2>
    <p class="scene">For each round, read the dilemma aloud, let pairs argue it out, then enter the class votes (from PollEverywhere or a show of hands). The most popular option is applied, and the scorecard and loop move. Ties are decided by you.</p>${how}
    <details class="fac"><summary>Facilitator run sheet (not for projection)</summary>
-    <p><b>Timing, about 24 minutes.</b> Set-up 2, four rounds at about 4 each (16), final debrief 4, plot the class codes 2 (optional). Cut rounds 1 and 4 if you only have 12 minutes: Rounds 2 and 3 carry the circular economy and greenwash links, but the codes will then not match the four-letter format.</p>
+    <p><b>Timing, about 24 minutes.</b> Set-up 2 (ask each pair to agree a group name first), four rounds at about 4 each (16), final debrief 4, plot the class codes 2 (optional). Cut rounds 1 and 4 if you only have 12 minutes: Rounds 2 and 3 carry the circular economy and greenwash links, but the codes will then not match the four-letter format.</p>
     <p><b>Before you start.</b> Open the Padlet. Prepare one PollEverywhere A/B/C item per round, or use hands up. Keep the loop diagram in view: it is the visual link to the circular economy slide.</p>
-    <p><b>At the end.</b> Paste the group codes into the box at the bottom of the page. Use the “Market reward strength (k)” slider: k is how strongly the market rewards trust and ESG after Round 4 (0 = not at all, 1 = default, 4 = strongly). Moving it shows how much the ranking of boards depends on an assumption nobody has measured.</p></details>
+    <p><b>At the end.</b> Paste the Padlet posts (group name, then code) into the box at the bottom of the page. Use the “Market reward strength (k)” slider: k is how strongly the market rewards trust and ESG after Round 4 (0 = not at all, 1 = default, 4 = strongly). Moving it shows how much the ranking of boards depends on an assumption nobody has measured.</p></details>
    <div class="row"><button class="btn" id="start">Start the meeting</button></div></section>`;
 }
 
@@ -454,9 +455,10 @@ function keyTable(){ return `<table class="keytbl"><thead><tr><th>Round</th><th>
 function endView(m){
   const r=simulate(S.choices,S.k), fin=r.fin, codes=S.choices.join(""), gap=Math.abs(r.m.esgA-r.m.esgB), f=fin.formula;
   const codeBlock=S.mode==="play"?`<h3>Your board’s code</h3><p><span class="code" id="codeval">${codes}</span></p>
-    <p class="small">Post this on the Padlet with your group number, for example “G12 ${codes}”.</p>
+    <p class="small">Post this on the Padlet: your group name, then the code. For example “${esc(S.group||"The Cobalt Crew")} ${codes}”.</p>
+    <p><span class="code" id="postval" style="font-size:1.1rem">${esc((S.group||"Your group name")+" "+codes)}</span></p>
     <p class="small"><b>How to read the code:</b> one letter per round, in order, and each letter is the option you chose.</p>
-    ${decodeList(codes)}<div class="row"><button class="btn ghost" id="copy">Copy the code</button></div>`:`<p class="small">Class decisions: <b>${codes}</b>. Paste group codes below to compare.</p>`;
+    ${decodeList(codes)}<div class="row"><button class="btn ghost" id="copy">Copy name and code</button></div>`:`<p class="small">Class decisions: <b>${codes}</b>. Paste group names and codes below to compare.</p>`;
   const carry=fin.carryWhy?`<div class="note"><b>Carried over from Round ${NR}:</b> ${esc(fin.carryNote||"")}${whyList(fin.carry,fin.carryWhy,Object.keys(fin.carry).filter(k=>fin.carry[k]!==0))}</div>`:"";
   const ls=loopShares(S.choices);
   return `<section class="panel">${progress()}<h2>The board’s final result</h2>${carry}
@@ -489,12 +491,13 @@ function wire(){
   const on=(s,f)=>{const e=$(s); if(e) e.addEventListener("click",f);};
   on("#start",()=>{S.stage="round"; S.carry=null; render();});
   document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{S.pick=b.dataset.k; document.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed",x===b)); upd();}));
+  const gn=$("#gname"); if(gn) gn.addEventListener("input",()=>{S.group=gn.value.trim();});
   const w=$("#why"); if(w) w.addEventListener("input",()=>{S.reason=w.value; upd();});
   on("#lock",()=>commit(S.pick));
   on("#next",()=>{ if(S.r===NR-1){S.stage="end"; S.delta=null;} else { S.r++; S.stage="round"; S.pick=null; S.reason=""; S.votes={A:0,B:0,C:0};
       const st=simulate(S.choices,S.k).steps[S.r]; S.delta=st.carry||null; S.carry=st.carry||null; S.carryWhy=st.carryWhy||null; S.carryNote=st.carryNote||null; } render(); window.scrollTo({top:0}); });
   on("#again",()=>{reset(); render();});
-  on("#copy",()=>{const t=$("#codeval").textContent; if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>{$("#copy").textContent="Copied";}).catch(()=>{$("#copy").textContent="Select and copy the code";}); else $("#copy").textContent="Select and copy the code";});
+  on("#copy",()=>{const t=$("#postval").textContent; if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>{$("#copy").textContent="Copied";}).catch(()=>{$("#copy").textContent="Select and copy the text";}); else $("#copy").textContent="Select and copy the text";});
   const k=$("#k"); if(k) k.addEventListener("input",()=>{S.k=parseFloat(k.value); render(); const e=$("#k"); if(e) e.focus();});
 }
 function upd(){ const b=$("#lock"); if(b) b.disabled=!(S.pick&&S.reason.trim().length>=8); }
@@ -518,10 +521,10 @@ function wireClass(){
 const CLS={text:"", y:"esgA", kk:1};
 function classResults(){
   return `<section class="panel cls" style="margin-top:1.4rem"><h2>Where the class ended up</h2>
-   <p class="small" style="max-width:64ch">Paste the Padlet posts below, one per line, such as “G12 BCAB”. Any four-letter code made of A, B and C is read; other text is ignored. Nothing is sent anywhere: the codes are decoded in this browser.</p>
+   <p class="small" style="max-width:64ch">Paste the Padlet posts below, one per line: the group name, then the code, such as “Green Giants BCAB”. The code is the last four-letter word made only of A, B and C on each line; everything else is read as the group name. Nothing is sent anywhere: the codes are decoded in this browser.</p>
    <details class="fac" open><summary>Code key: what each letter means</summary><p class="small">A code has four letters, one per round, in order. Each letter is the option a pair chose in that round.</p>${keyTable()}
    <label class="lbl" for="chk" style="margin-top:.8rem">Check one code</label><input id="chk" maxlength="4" placeholder="e.g. BCAB" style="max-width:9rem;text-transform:uppercase"><div id="chkout" class="small" aria-live="polite"></div></details>
-   <label class="lbl" for="codes">Group codes</label><textarea id="codes" placeholder="G1 BCAB&#10;G2 AABA&#10;G3 CCBC"></textarea>
+   <label class="lbl" for="codes">Group names and codes</label><textarea id="codes" placeholder="Green Giants BCAB&#10;The Cobalt Crew AABA&#10;Team Loop CCBC"></textarea>
    <div class="row"><label for="ysel">Vertical axis</label>
    <select id="ysel"><option value="esgA">ESG, Rater A</option><option value="esgB">ESG, Rater B</option><option value="trust">Public trust</option><option value="circ">Circularity</option></select>
    <label for="kk">Market reward strength (k)</label><select id="kk"><option>0</option><option>0.5</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select>
@@ -530,9 +533,9 @@ function classResults(){
 function scoreLine(m){ return `profit ${m.profit}, ESG Rater A ${m.esgA}, Rater B ${m.esgB}, trust ${m.trust}, circularity ${m.circ}`; }
 function plotClass(){
   const ysel=$("#ysel"); if(ysel) ysel.value=CLS.y; const kk=$("#kk"); if(kk) kk.value=String(CLS.kk);
-  const found=[], groups=[]; (CLS.text||"").split(/\n/).forEach(line=>{ const m=line.match(/\b[ABCabc]{4}\b/); if(m){ found.push(m[0].toUpperCase()); const g=line.replace(m[0],"").replace(/[:\-–,]/g," ").trim(); groups.push(g||("Group "+found.length)); } });
+  const found=[], groups=[]; (CLS.text||"").split(/\n/).forEach(line=>{ const ms=[...line.matchAll(/\b[ABCabc]{4}\b/g)]; if(ms.length){ const m=ms[ms.length-1]; found.push(m[0].toUpperCase()); const g=(line.slice(0,m.index)+" "+line.slice(m.index+4)).replace(/[:\-–,]/g," ").replace(/\s+/g," ").trim(); groups.push(g||("(no name "+found.length+")")); } });
   const out=$("#plotout"); if(!out) return;
-  if(!found.length){ out.innerHTML=`<p class="small">No codes found yet. Paste posts such as “G12 BCAB”.</p>`; return; }
+  if(!found.length){ out.innerHTML=`<p class="small">No codes found yet. Paste posts such as “Green Giants BCAB”.</p>`; return; }
   const pts=found.map((c,i)=>({c, m:simulate(c.split(""),CLS.kk).m, i}));
   const W=560,H=360,pad=48, X=v=>pad+(W-pad-14)*v/100, Y=v=>H-pad-(H-pad-14)*v/100;
   const yl={esgA:"ESG, Rater A",esgB:"ESG, Rater B",trust:"Public trust",circ:"Circularity"}[CLS.y];
